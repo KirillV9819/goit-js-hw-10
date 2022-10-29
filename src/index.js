@@ -12,7 +12,7 @@ const refs = {
 };
 
 refs.inputRef.addEventListener(
-  'input',
+  "input",
   debounce(onSearchBoxInput, DEBOUNCE_DELAY)
 );
 
