@@ -1,58 +1,83 @@
 import './css/styles.css';
-import "./fetchCountries";
+import fetchCountries from './fetchCountries';
+import debounce from 'lodash.debounce';
+import { Notify } from 'notiflix/build/notiflix-notify-aio';
 
-const BASE_URL = "https://restcountries.com/v3.1/";
 const DEBOUNCE_DELAY = 300;
 
 const refs = {
     inputRef: document.querySelector("#search-box"),
-    countryList: document.querySelector(".country-list"),
+    countriesList: document.querySelector(".country-list"),
     countryInfo: document.querySelector(".country-info"),
 };
 
-function fetchCountries(name){
-    return fetch(`${BASE_URL}name/${name}?fields=name,capital,population,flags,languages`)
-        .then((response) => {
+refs.inputRef.addEventListener(
+  'input',
+  debounce(onSearchBoxInput, DEBOUNCE_DELAY)
+);
 
-            if (!response.ok) {
-                throw new Error(response.status)
-            }
+function onSearchBoxInput(evt) {
 
-            return response.json()
-        })
-        .catch((error) => console.log(error))
+  const searchValue = evt.target.value.trim();
+
+  if (!searchValue) {
+    refs.countriesList.innerHTML = "";
+    refs.countryInfo.innerHTML = "";
+    return;
+  }
+
+  fetchCountries(searchValue).then(getCountries);
 };
 
-function getCountries() {
-    fetchCountries().then((data) => {
-        // const countries = data;
-        // createListMarkup(data)
-        console.log(data)
-    })
-}
-getCountries()
+function getCountries(array) {
 
+  if (!array) {
+    return;
+  }
+  if (array.length > 10) {
+    Notify.info('Too many matches found. Please enter a more specific name.');
+    return;
+  }
 
+  if (array.length > 1 && array.length < 10) {
+    createListMarkup(array);
+    return;
+  }
 
-function createMarkup(country) {
-    
-    `<img alt="${name.official}" src="${flags.svg}" class="country-img"></img>
-    <h2class="country-name">${name.official}</h2class=>
-    <p class="country-capital"><b>Capital:</b>${capital}</p>
-    <p class="country-popul"><b>Population:</b>${population}</p>
-    <p class="country-lang"><b>Languages:</b>${languages}</p>`  
-}
+  createMarkup(array[0]);
+};
+
+function createMarkup({
+    name: { official },
+    capital,
+    population,
+    flags: { svg },
+    languages,
+}) {
+    const allLanguages = Object.values(languages).join(',');
+
+    const markup =
+    `<img alt="flag ${official}" src="${svg}" class="country-img"></img>
+    <h2class="country-name">${official}</h2class=>
+    <p class="country-text"><b>Capital:</b>${capital}</p>
+    <p class="country-text"><b>Population:</b>${population}</p>
+    <p class="country-text"><b>Languages:</b>${allLanguages}</p>`
+
+    refs.countryInfo.innerHTML = markup;
+    refs.countriesList.innerHTML = "";
+};
 
 function createListMarkup(countries) {
 
     const markup = countries
-        .map(({ name, capital, population, flags, languages }) => {
-
-        `<li class="country-list-item">
-        <img class="country-list-item__img" alt="${name.official}" src="${flags.svg}"></img>
-        <p class="country-list-item__name">${name.official}</p>
+        
+        .map(({ name: { official }, capital, population, flags: { svg }, languages }) => {
+            return `<li class="country-list-item">
+        <img class="country-list-item__img" alt="flag ${official}" src="${svg}"></img>
+        <p class="country-list-item__name">${official}</p>
         </li>`;
         }).join("");
-    console.log(markup)
-    refs.countryList.innerHTML = markup;
+    
+    refs.countriesList.innerHTML = markup;
+    refs.countryInfo.innerHTML = "";
 }
