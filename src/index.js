@@ -32,8 +32,11 @@ function onSearchBoxInput(evt) {
 function getCountries(array) {
 
   if (!array) {
+    refs.countryInfo.innerHTML = "";
+    refs.countriesList.innerHTML = "";
     return;
   }
+
   if (array.length > 10) {
     Notify.info('Too many matches found. Please enter a more specific name.');
     return;
